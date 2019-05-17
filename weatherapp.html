@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Weather App</title>
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+	<style type="text/css">
+		#search{
+  flex-grow: 1;
+  max-width: 600px;
+  margin:0 auto;
+}
+#header{
+  padding:2%;
+  background-color:#1C262F;
+}
+#button{
+  margin:0 auto;
+  max-width: 600px;
+}
+#weather{
+ background-color: #eee;
+ margin: 2% auto;
+ padding: 2%;
+}
+#tempButton{
+	float:right!important;
+	max-width: 200px;
+
+}
+	</style>
+
+</head>
+<body>
+<div id="header" class="text-center">
+  <h1 class="text-white">Where to you want to see the weather?</h1>
+  <form id="form" class="form-group ">
+    <input id="search" type="text" placeholder="City, State, Country" class="form-control text-center">
+    <button id="button" type="submit" class="btn btn-dark btn-block">Submit</button>
+  </form>
+</div>
+<div id="weather" class="container text-center card">
+  
+</div>
+<script type="text/javascript">
+	var weather=document.querySelector("#weather");
+	//get lat and long from browser geolocation
+	if ("geolocation" in navigator) {
+		navigator.geolocation.getCurrentPosition(function(position){
+		var lat=position.coords.latitude;
+  		var lng=position.coords.longitude;
+  		requestWeather(lat,lng);
+		});
+
+		};	
+		//send ajax request for local weather info
+	function requestWeather(lat,lng){
+		var xhr=new XMLHttpRequest();
+		xhr.open("GET","http://api.openweathermap.org/data/2.5/weather?lat="+lat+"&lon="+lng+"&units=metric&APPID=7aab6af9c271ca95473ce97141bdc4e6");
+		xhr.onload=displayWeather;
+		xhr.send();
+};
+	//send geocode ajax request when form is sumbited and pass lat and long to requestWeather function
+document.querySelector("#form").addEventListener("submit",function(e){
+	e.preventDefault();
+	var search=document.getElementById("search");
+	new Promise(function(resolve,reject){
+	var xhr=new XMLHttpRequest();
+	xhr.open("GET","https://maps.googleapis.com/maps/api/geocode/json?address="+search.value+"&key=AIzaSyAxJgtPYL0FbIOMcU0OI71UQmDtRdZb0DE");
+	xhr.onload=function(data){
+		var loc=JSON.parse(data.target.response);
+		console.log(loc);
+		var lat=loc.results[0].geometry.location.lat;
+		var lng=loc.results[0].geometry.location.lng;
+		resolve(requestWeather(lat,lng));
+	};
+	xhr.onerror=function(error){
+		reject(console.log(error))
+	};
+	xhr.send();
+	})
+})
+
+//display information from weather ajax
+function displayWeather(data){
+  var info=JSON.parse(data.target.response);
+  console.log(info);
+  var html="<h1>Current weather for "+info.name+"</h1>"+
+  			"<h2 id='temp'>Temperature: "+info.main.temp+" C°</h2>"+
+  			"<h2>"+info.weather[0].description.toUpperCase()+"</h2>"+
+  			"<h2>Humidity: "+info.main.humidity+"%</h2>"+
+  			"<button type='button' id='tempButton' class='btn btn-primary'>F°</button>"
+  weather.innerHTML=html
+  //change display from C to F or F to C
+var tempBtn=document.getElementById("tempButton")
+tempBtn.addEventListener("click",function(e){
+var temp=document.getElementById("temp");
+if (tempBtn.textContent=="C°") {
+	temp.textContent="Temperature: "+(info.main.temp)+" C°"
+	tempBtn.textContent="F°"
+}else if (tempBtn.textContent=="F°") {
+	temp.textContent="Temperature: "+(info.main.temp*1.8+32)+" F°"
+	tempBtn.textContent="C°"
+}
+
+})
+}
+
+
+
+
+</script>
+</body>
+</html>
